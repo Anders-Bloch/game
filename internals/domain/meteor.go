@@ -1,12 +1,14 @@
 package domain
 
 import (
-	"image"
+	"fmt"
+	"image/color"
 	"math"
 	"math/rand/v2"
 
 	projectRoot "github.com/andersbloch/game"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 var MeteorSprite = projectRoot.MustLoadImage("assets/meteor_small.png")
@@ -17,23 +19,24 @@ type Meteor struct {
 	sprite        *ebiten.Image
 	rotationSpeed float64
 	rotation      float64
+	boundary 	  Circle
 }
 
 func (m *Meteor) BlowUp() {
+	fmt.Println("Blow up!")
 	// Placeholder for blow-up logic
 }
 
-func (m *Meteor) IsColliding(b *Bullet) bool {
-	if m.position.X < b.position.X+float64(b.Bounds().Dx()) &&
-		m.position.X+float64(m.Bounds().Dx()) > b.position.X &&
-		m.position.Y < b.position.Y+float64(b.Bounds().Dy()) &&
-		m.position.Y+float64(m.Bounds().Dy()) > b.position.Y {
-		return true
+func (m *Meteor) IsColliding(c Circle) bool {
+	result := m.boundary.Intersect(c)
+	if result {
+		fmt.Printf("IsColliding: %v \n", result)
+
 	}
-	return false
+	return result
 }
 
-func NewMeteor(ScreenWidth, ScreenHeight float64) *Meteor {
+func NewMeteor(ScreenWidth, ScreenHeight float64, gameSpeed int) *Meteor {
 	sprite := MeteorSprite
 
 	// Figure out the target position — the screen center, in this case
@@ -55,7 +58,7 @@ func NewMeteor(ScreenWidth, ScreenHeight float64) *Meteor {
 	}
 
 	// Randomized velocity
-	velocity := 0.25 + rand.Float64()*1.5
+	velocity := (0.25 + rand.Float64()*1.5) + (float64(gameSpeed)/10)
 
 	// Direction is the target minus the current position
 	direction := Vector{
@@ -79,17 +82,24 @@ func NewMeteor(ScreenWidth, ScreenHeight float64) *Meteor {
 		movement:      movement,
 		sprite:        sprite,
 		rotationSpeed: rotationSpeed,
+		boundary: Circle{
+			X: pos.X+65,
+			Y: pos.Y+65, 
+			Radius: 35.0,
+		},
 	}
 }
 
-func (m *Meteor) Bounds() image.Rectangle {
-	return m.sprite.Bounds()
+func (m *Meteor) Intersect(c Circle) bool {
+	return m.Intersect(c)
 }
 
 func (m *Meteor) Update() error {
 	m.position.X += m.movement.X
 	m.position.Y += m.movement.Y
 	m.rotation += m.rotationSpeed
+	m.boundary.X = m.position.X + 65
+	m.boundary.Y = m.position.Y + 65
 	return nil
 }
 
@@ -103,6 +113,11 @@ func (m *Meteor) Draw(screen *ebiten.Image) {
 	op.GeoM.Rotate(m.rotation)
 	op.GeoM.Translate(halfW, halfH)
 	op.GeoM.Translate(m.position.X, m.position.Y)
+	
+    strokeWidth := 2.0
+    clr := color.RGBA{0, 255, 0, 255} // Green
+    vector.StrokeCircle(screen, float32(m.boundary.X), float32(m.boundary.Y), float32(m.boundary.Radius), float32(strokeWidth), clr, true)
+
 
 	screen.DrawImage(m.sprite, op)
 }

@@ -1,12 +1,14 @@
 package domain
 
 import (
-	"image"
+	"fmt"
+	"image/color"
 	"math"
 
 	projectRoot "github.com/andersbloch/game"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 type Vector struct {
@@ -29,6 +31,7 @@ type Player struct {
 	position Vector
 	sprite   *ebiten.Image
 	rotation float64
+	boundary Circle
 }
 
 func NewPlayer(ScreenWidth, ScreenHeight float64) *Player {
@@ -47,6 +50,11 @@ func NewPlayer(ScreenWidth, ScreenHeight float64) *Player {
 		position: pos,
 		sprite:   sprite,
 		rotation: 0,
+		boundary: Circle{
+			X: pos.X+65,
+			Y: pos.Y+65,
+			Radius: 35,
+		},
 	}
 }
 
@@ -56,8 +64,12 @@ func (p *Player) Rotation() float64 {
 	return p.rotation
 }
 
-func (p *Player) Bounds() image.Rectangle {
-	return p.sprite.Bounds()
+func (p *Player) BlowUp() {
+	fmt.Println("Ship hit!!")
+}
+
+func (p *Player) Bounds() Circle {
+	return p.boundary
 }
 
 func (p *Player) ShipCenter() Vector {
@@ -90,6 +102,11 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(halfW, halfH)
 
 	op.GeoM.Translate(p.position.X, p.position.Y)
+
+	strokeWidth := 2.0
+    clr := color.RGBA{0, 255, 0, 255} // Green
+    vector.StrokeCircle(screen, float32(p.boundary.X), float32(p.boundary.Y), float32(p.boundary.Radius), float32(strokeWidth), clr, true)
+
 
 	screen.DrawImage(p.sprite, op)
 }
